@@ -1,0 +1,11 @@
+/data
+/outputs
+/seg_outputs
+/ckpts
+/weight
+/cache
+/Generation
+/hf_cache
+/short_test
+/test_load_unload
+__pycache__

@@ -191,14 +191,14 @@ def extract_last_input(line):
 def extract_prompts():
 	new_prompts= []
 	# Read the file and process each line
-	with open("E:/ReNO_V/rewards/content/DSG/assets/prompts.txt", "r") as file:
+	with open("rewards/content/DSG/assets/prompts.txt", "r") as file:
 		for line in file:
 			extracted_input = extract_last_input(line)
 			if extracted_input:
 				new_prompts.append( extracted_input.split('\\noutput:')[0])
 
 	train_prompts= []
-	with open("E:/ReNO_V/rewards/content/DSG/assets/train_prompts.json", "r") as file:
+	with open("rewards/content/DSG/assets/train_prompts.json", "r") as file:
 		train_prompts= json.load(file)
 	
 	return new_prompts, train_prompts

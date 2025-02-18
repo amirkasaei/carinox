@@ -14,8 +14,8 @@ import torch
 import pandas as pd
 import os.path
 
-DA_GENERATION_PATH= 'E:/ReNO_V/rewards/content/DA/DA_generated_questions.json'
-DA_DECOMPOSITION_PATH= 'E:/ReNO_V/rewards/content/DA/dascore_prompt_decompositions.json'
+DA_GENERATION_PATH= 'rewards/content/DA/DA_generated_questions.json'
+DA_DECOMPOSITION_PATH= 'rewards/content/DA/dascore_prompt_decompositions.json'
 
 
 class DAScoreLoss(VQARewardLoss):

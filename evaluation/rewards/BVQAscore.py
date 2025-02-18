@@ -20,13 +20,15 @@ def open_patched(file, *args, **kwargs):
     # Check if the path starts with the hardcoded prefix
     if file.startswith("/evaluation/rewards/content/BVQA/configs/"):
         # Remove the leading '/' and append the correct base directory
-        relative_path = file.lstrip("/")
-        file = os.path.join(r"E:/Reno_V/evaluation/rewards/", relative_path)
+        # relative_path = file.lstrip("/")
+        # file = os.path.join(r"E:/Reno_V/evaluation/rewards/", relative_path)
+        pass 
 
     if file.startswith("configs/"):
         # Remove the leading '/' and append the correct base directory
-        relative_path = file.lstrip("/")
-        file = os.path.join(r"E:/Reno_V/evaluation/rewards/content/BVQA/", relative_path)
+        # relative_path = file.lstrip("/")
+        # file = os.path.join(r"E:/Reno_V/evaluation/rewards/content/BVQA/", relative_path)
+        pass
 
     # Call the original `open` function with the (potentially modified) path
     return original_open(file, *args, **kwargs)

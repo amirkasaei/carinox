@@ -102,12 +102,8 @@ class LatentNoiseTrainer:
             for reward_type, metrics in self.reward_losses.items():
                 preprocessed_image = clip_img_transform(reward_type, image)
                 for reward_loss in metrics:
-                    # reward_loss.model.model.model = reward_loss.model.model.model.to(torch.device("cuda"))
-                    # print(reward_loss.model.model.model.device)
-
                     loss, score = reward_loss(preprocessed_image, prompt)
                     to_log += f"{reward_loss.name}: {loss.item():.4f}, "
-                    # print(f"name : {reward_loss.name} loss : {loss}")
                     total_loss += loss * reward_loss.weighting
                     rewards[reward_loss.name] = loss.item()
 
@@ -118,14 +114,13 @@ class LatentNoiseTrainer:
                         regularization = self.regularization_weight * (
                             0.5 * latent_norm**2 - (latent_dim - 1) * log_norm
                         )
-                        loss += regularization.to(total_loss.dtype)/4
+                        loss += regularization.to(total_loss.dtype)
+
                     loss.backward(retain_graph=True)
                     gradient_norm = torch.nn.utils.clip_grad_norm_(latents, self.grad_clip)
                     to_log += f"{reward_loss.name} grad norm: {gradient_norm}, "
                     grad_clones.append(latents.grad.clone())
                     optimizer.zero_grad()
-                    # reward_loss.model.model.model = reward_loss.model.model.model.to(torch.device("cpu"))
-                    # print(reward_loss.model.model.model.device)
 
             rewards["total"] = total_loss.item()
             to_log += f"Total: {total_loss.item():.4f}"
@@ -169,7 +164,7 @@ class LatentNoiseTrainer:
                 best_latents = latents.detach().cpu()
             if iteration != self.n_iters - 1 and not self.imageselect:
                 latents.grad = sum(grad_clones)
-                gradient_norm = torch.nn.utils.clip_grad_norm_(latents, self.grad_clip)
+                gradient_norm = torch.nn.utils.clip_grad_norm_(latents, math.inf)
                 to_log += f"latent grad norm: {gradient_norm}"
                 optimizer.step()
 

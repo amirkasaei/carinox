@@ -22,7 +22,7 @@ class VQA(VQARewardLoss):
         self.weighting = weighting
         self.dtype = dtype
         self.device = device
-        self.model = VQAScore(model='clip-flant5-xl', device=self.device)
+        self.model = VQAScore(model='clip-flant5-xxl', device=self.device)
         #self.model = VQAScore(model='llava-v1.5-7b', device=self.device)
         self.model.model.model.requires_grad_(False)
 

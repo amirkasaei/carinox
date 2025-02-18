@@ -5,6 +5,8 @@
 /weight
 /cache
 /Generation
+/Generation_seed0
+/Generation_seed1
 /hf_cache
 /short_test
 /test_load_unload

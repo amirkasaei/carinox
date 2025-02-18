@@ -14,6 +14,11 @@ from rewards import get_reward_losses
 from training import LatentNoiseTrainer, get_optimizer
 from evaluation.evaluator import Evaluator
 
+
+import sys
+sys.path.append('/home/user01/amirKasaei/Compositional-Noise-Optimization')
+
+
 def main(args):
     seed_everything(args.seed)
     bf.makedirs(f"{args.save_dir}/logs/{args.task}")
@@ -134,8 +139,12 @@ def main(args):
         fo.close()
         for i, prompt in tqdm(enumerate(prompts)):
             # Get new latents and optimizer
+            seed_everything(0)
+            
+            # torch.manual_seed(0)
             init_latents = torch.randn(shape, device=device, dtype=dtype)
             latents = torch.nn.Parameter(init_latents, requires_grad=enable_grad)
+            # seed_everything(1)
             optimizer = get_optimizer(args.optim, latents, args.lr, args.nesterov)
 
             prompt = prompt.strip()

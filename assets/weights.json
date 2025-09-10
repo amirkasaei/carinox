@@ -1,0 +1,12 @@
+{
+  "color": { "HPS": 0.4, "ImageReward": 1.06, "DAscore": 1.41, "VQAScore": 1.14 },
+  "shape": { "HPS": 0.95, "ImageReward": 1.12, "DAscore": 1, "VQAScore": 0.92 },
+  "texture": { "HPS": 0.9, "ImageReward": 1.1, "DAscore": 1.07, "VQAScore": 0.93 },
+  "2d_spatial": { "HPS": 1.06, "ImageReward": 1.02, "DAscore": 0.82, "VQAScore": 1.1 },
+  "non_spatial": { "HPS": 1.01, "ImageReward": 0.96, "DAscore": 0.85, "VQAScore": 1.17 },
+  "complex": { "HPS": 0.67, "ImageReward": 1.05, "DAscore": 1.21, "VQAScore": 1.06 },
+  "3d_spatial": { "HPS": 0.96, "ImageReward": 0.92, "DAscore": 0.68, "VQAScore": 1.43 },
+  "numeracy": { "HPS": 1.02, "ImageReward": 1.05, "DAscore": 1, "VQAScore": 0.93 },
+  "overall": { "HPS": 0.59, "ImageReward": 0.94, "DAscore": 1.12, "VQAScore": 1.34 },
+  "none" : { "HPS": 1, "ImageReward": 1, "DAscore": 1, "VQAScore": 1 }
+}

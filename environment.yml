@@ -1,24 +1,31 @@
-name: reno
+name: ino
 channels:
-  - pytorch
-  - nvidia
   - conda-forge
+  - nvidia
+  - pytorch
+  - defaults
+
 dependencies:
   - python=3.11
-  - pytorch=2.3
-  - torchvision=0.18.0
-  - pytorch-cuda
-  - pytorch-lightning=2.2
   - pip
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=12.1
+  - flask
+  - requests
+  - tqdm
+  - scikit-learn
+  - jinja2
+  - yaml
   - pip:
-    - datasets==2.18
-    - transformers==4.38.2
-    - diffusers==0.28
-    - hpsv2==1.2
-    - image-reward==1.5
-    - open-clip-torch==2.24
-    - blobfile
-    - openai-clip
-    - setuptools==60.2
-    - optimum
-    - xformers
+      - transformers
+      - torchmetrics
+      - opencv-python-headless
+      - huggingface-hub
+      - sentencepiece
+      - tensorboard

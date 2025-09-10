@@ -5,17 +5,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from .BLIP.models.blip_vqa import blip_vqa
 from rewards.reward_classes.VQA_reward import VQARewardLoss
 from rewards.reward_classes.base_reward import BaseRewardLoss
+"""
 
-# paper's own custom implementation of the ranking!
-# it's used for overwriting blipvqa_model's rank_answers method
+paper's own custom implementation of the ranking is used for overwriting blipvqa_model's rank_answers method
 
+"""
 from typing import Tuple
 import torch
 import pandas as pd
 import os.path
 
-DA_GENERATION_PATH= 'rewards/content/DA/DA_generated_questions.json'
-DA_DECOMPOSITION_PATH= 'rewards/content/DA/dascore_prompt_decompositions.json'
+DA_GENERATION_PATH= 'assets/DA_questions.json'
 
 
 class DAScoreLoss(VQARewardLoss):
@@ -43,7 +43,7 @@ class DAScoreLoss(VQARewardLoss):
         # Freeze
         BaseRewardLoss.freeze_parameters(self.blipvqa_model.parameters())
 
-        super().__init__("DA Score", weighting)
+        super().__init__("DAscore", weighting)
 
         self.device = device
 

@@ -16,8 +16,6 @@ from safetensors.torch import load_file
 from models.RewardPixart import RewardPixartPipeline, freeze_params
 from models.RewardStableDiffusion import RewardStableDiffusion
 from models.RewardStableDiffusionXL import RewardStableDiffusionXL
-from models.RewardFlux import RewardFluxPipeline
-from models.RewardStableDiffusion21 import RewardStableDiffusionV2
 
 
 def get_model(
@@ -25,8 +23,8 @@ def get_model(
     dtype: torch.dtype,
     device: torch.device,
     cache_dir: str,
-    memsave: bool = False,
     enable_sequential_cpu_offload: bool = False,
+    memsave: bool = False,
 ):
     logging.info(f"Loading model: {model_name}")
     if model_name == "sd-turbo":
@@ -38,14 +36,6 @@ def get_model(
             memsave=memsave,
         )
         pipe = pipe.to(device, dtype)
-    elif model_name == "sd21":
-        pipe = RewardStableDiffusionV2.from_pretrained(
-            "stabilityai/stable-diffusion-2-1",
-            torch_dtype=dtype,
-            variant="fp16",
-            cache_dir=cache_dir,
-            memsave=memsave,
-        )
     elif model_name == "sdxl-turbo":
         vae = AutoencoderKL.from_pretrained(
             "madebyollin/sdxl-vae-fp16-fix",
@@ -90,43 +80,6 @@ def get_model(
         freeze_params(pipe.transformer.parameters())
         pipe.transformer.enable_gradient_checkpointing()
         pipe = pipe.to(device)
-    elif model_name == "hyper-sd":
-        base_model_id = "stabilityai/stable-diffusion-xl-base-1.0"
-        repo_name = "ByteDance/Hyper-SD"
-        ckpt_name = "Hyper-SDXL-1step-Unet.safetensors"
-        # Load model.
-        unet = UNet2DConditionModel.from_config(
-            base_model_id, subfolder="unet", cache_dir=cache_dir
-        ).to(device, dtype)
-        unet.load_state_dict(
-            load_file(
-                hf_hub_download(repo_name, ckpt_name, cache_dir=cache_dir),
-                device="cuda",
-            )
-        )
-        pipe = RewardStableDiffusionXL.from_pretrained(
-            base_model_id,
-            unet=unet,
-            torch_dtype=dtype,
-            variant="fp16",
-            cache_dir=cache_dir,
-            is_hyper=True,
-            memsave=memsave,
-        )
-        # Use LCM scheduler instead of ddim scheduler to support specific timestep number inputs
-        pipe.scheduler = LCMScheduler.from_config(
-            pipe.scheduler.config, cache_dir=cache_dir
-        )
-        pipe = pipe.to(device, dtype)
-        # upcast vae
-        pipe.vae = pipe.vae.to(dtype=torch.float32)
-    elif model_name == "flux":
-        pipe = RewardFluxPipeline.from_pretrained(
-            "black-forest-labs/FLUX.1-schnell",
-            torch_dtype=torch.bfloat16,
-            cache_dir=cache_dir,
-        )
-        pipe.to(device, dtype)
     else:
         raise ValueError(f"Unknown model name: {model_name}")
     if enable_sequential_cpu_offload:

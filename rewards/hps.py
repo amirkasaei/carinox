@@ -4,6 +4,9 @@ from hpsv2.src.open_clip import create_model, get_tokenizer
 
 from rewards.reward_classes.embedding_reward import EmbeddingRewardLoss
 
+# HPS has a narrower range for its answers, so we expand the bounds to better align with the 0-1 range.
+SCALE = 2
+
 class HPSLoss(EmbeddingRewardLoss):
     """HPS reward loss function for optimization."""
 
@@ -13,7 +16,6 @@ class HPSLoss(EmbeddingRewardLoss):
         dtype: torch.dtype,
         device: torch.device,
         cache_dir: str,
-        memsave: bool = False,
     ):
         self.model = create_model(
             "ViT-H-14",
@@ -32,10 +34,6 @@ class HPSLoss(EmbeddingRewardLoss):
             torch.load(checkpoint_path, map_location=device)["state_dict"]
         )
         self.hps_tokenizer = get_tokenizer("ViT-H-14")
-        if memsave:
-            import memsave_torch.nn
-
-            self.model = memsave_torch.nn.convert_to_memory_saving(self.model)
         self.model = self.model.to(device, dtype=dtype)
         self.model.eval()
         self.freeze_parameters(self.model.parameters())
@@ -55,7 +53,8 @@ class HPSLoss(EmbeddingRewardLoss):
         self, image_features: torch.Tensor, text_features: torch.Tensor
     ) -> torch.Tensor:
         logits_per_image = image_features @ text_features.T
-        hps_score = torch.diagonal(logits_per_image)[0]
+
+        hps_score = torch.diagonal(logits_per_image)[0] * SCALE
         hps_loss = 1 - hps_score
 
         return hps_loss, hps_score

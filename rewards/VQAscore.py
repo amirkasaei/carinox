@@ -1,8 +1,8 @@
 from rewards.reward_classes.VQA_reward import VQARewardLoss
 
 import torch
-# from .t2v_metrics.t2v_metrics.vqascore import VQAScore
 from .t2v_metrics.vqascore import VQAScore
+
 import gc
 gc.collect()
 torch.cuda.empty_cache()
@@ -22,16 +22,11 @@ class VQA(VQARewardLoss):
         self.weighting = weighting
         self.dtype = dtype
         self.device = device
-        self.model = VQAScore(model='clip-flant5-xxl', device=self.device)
-        #self.model = VQAScore(model='llava-v1.5-7b', device=self.device)
+
+        # Using 'xl' instead of 'xxl' to save VRAM
+        self.model = VQAScore(model='clip-flant5-xl', device=self.device)
         self.model.model.model.requires_grad_(False)
 
-    def into_cpu(self):
-        self.model.model.model = self.model.model.model.to(torch.device("cpu"))
-    
-    def into_cuda(self):
-        self.model.model.model = self.model.model.model.to(torch.device("cpu"))
-    
     def get_questions(self, prompt):
         return super().get_questions(prompt)
     

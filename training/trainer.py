@@ -10,6 +10,7 @@ from diffusers import DiffusionPipeline
 from rewards import clip_img_transform
 from rewards.reward_classes.base_reward import BaseRewardLoss
 
+import pandas as pd
 
 class LatentNoiseTrainer:
     """Trainer for optimizing latents with reward losses."""
@@ -25,10 +26,13 @@ class LatentNoiseTrainer:
         regularize: bool = True,
         regularization_weight: float = 0.01,
         grad_clip: float = 0.1,
-        log_metrics: bool = True,
         save_all_images: bool = False,
-        imageselect: bool = False,
+        save_every_10_image: bool = False,
+        save_every_5_image: bool = False,
+        adaptive: bool = True,
         device: torch.device = torch.device("cuda"),
+        categories: pd = None,
+        weights: pd = None
     ):
       
         self.reward_losses = reward_losses
@@ -39,11 +43,14 @@ class LatentNoiseTrainer:
         self.no_optim = no_optim
         self.regularize = regularize
         self.regularization_weight = regularization_weight
-        self.grad_clip = grad_clip
-        self.log_metrics = log_metrics
         self.save_all_images = save_all_images
-        self.imageselect = imageselect
+        self.save_every_10_image = save_every_10_image
+        self.save_every_5_image = save_every_5_image
         self.device = device
+        self.categories_ = categories
+        self.weights_ = weights
+        self.adaptive = adaptive
+        self.grad_clip = grad_clip
 
     def train(
         self,
@@ -52,6 +59,7 @@ class LatentNoiseTrainer:
         optimizer: torch.optim.Optimizer,
         save_dir: Optional[str] = None,
         multi_apply_fn=None,
+        s = 0,
     ) -> Tuple[PIL.Image.Image, Dict[str, float], Dict[str, float]]:
         logging.info(f"Optimizing latents for prompt '{prompt}'.")
         best_loss = torch.inf
@@ -61,28 +69,26 @@ class LatentNoiseTrainer:
         best_rewards = None
         best_latents = None
         latent_dim = math.prod(latents.shape[1:])
+
+        i30_best_loss = None
+        i30_best_image = None
+        i30_best_rewards = None
+        i30_best_latents = None
+
+        if self.adaptive:
+            adaptiveWeight = self.weights_[self.categories_[prompt]]
+
         for iteration in range(self.n_iters):
             to_log = ""
             rewards = {}
             optimizer.zero_grad()
-            generator = torch.Generator("cuda").manual_seed(self.seed)
-            if self.imageselect:
-                new_latents = torch.randn_like(
-                    latents, device=self.device, dtype=latents.dtype
-                )
-                image = self.model.apply(
-                    new_latents,
-                    prompt,
-                    generator=generator,
-                    num_inference_steps=self.n_inference_steps,
-                )
-            else:
-                image = self.model.apply(
-                    latents=latents,
-                    prompt=prompt,
-                    generator=generator,
-                    num_inference_steps=self.n_inference_steps,
-                )
+            generator = torch.Generator("cuda").manual_seed(s)
+            image = self.model.apply(
+                latents=latents,
+                prompt=prompt,
+                generator=generator,
+                num_inference_steps=self.n_inference_steps,
+            )
             if initial_image is None:
                 if multi_apply_fn is not None:
                     initial_image = multi_apply_fn(latents.detach(), prompt)
@@ -98,95 +104,88 @@ class LatentNoiseTrainer:
 
             total_loss = 0
             grad_clones = []
-            
+
+            if self.regularize:
+                # compute in fp32 to avoid overflow
+                latent_norm = torch.linalg.vector_norm(latents).to(torch.float32)
+                log_norm = torch.log(latent_norm)
+                regularization = self.regularization_weight * (
+                    0.5 * latent_norm**2 - (latent_dim - 1) * log_norm
+                )
+
             for reward_type, metrics in self.reward_losses.items():
                 preprocessed_image = clip_img_transform(reward_type, image)
                 for reward_loss in metrics:
-                    loss, score = reward_loss(preprocessed_image, prompt)
+                    # print(f"{reward_loss.name}:{reward_loss.weighting}")
+                    
+                    loss, _ = reward_loss(preprocessed_image, prompt)
                     to_log += f"{reward_loss.name}: {loss.item():.4f}, "
-                    total_loss += loss * reward_loss.weighting
                     rewards[reward_loss.name] = loss.item()
 
+                    total_loss += loss.item() * (adaptiveWeight[reward_loss.name] if self.adaptive else 1)
+                    loss *= reward_loss.weighting * (adaptiveWeight[reward_loss.name] if self.adaptive else 1)
                     if self.regularize:
-                        # compute in fp32 to avoid overflow
-                        latent_norm = torch.linalg.vector_norm(latents).to(torch.float32)
-                        log_norm = torch.log(latent_norm)
-                        regularization = self.regularization_weight * (
-                            0.5 * latent_norm**2 - (latent_dim - 1) * log_norm
-                        )
-                        loss += regularization.to(total_loss.dtype)
+                        loss += regularization.to(loss.dtype)
 
                     loss.backward(retain_graph=True)
                     gradient_norm = torch.nn.utils.clip_grad_norm_(latents, self.grad_clip)
                     to_log += f"{reward_loss.name} grad norm: {gradient_norm}, "
                     grad_clones.append(latents.grad.clone())
                     optimizer.zero_grad()
-
-            rewards["total"] = total_loss.item()
-            to_log += f"Total: {total_loss.item():.4f}"
-            total_reward_loss = total_loss.item()
-
-            ## single back 
-            # total_loss = 0
             
-            # for reward_type, metrics in self.reward_losses.items():
-            #     preprocessed_image = clip_img_transform(reward_type, image)
-            #     for reward_loss in metrics:
-            #         loss, score = reward_loss(preprocessed_image, prompt)
-            #         to_log += f"{reward_loss.name}: {loss.item():.4f}, "
-            #         total_loss += loss * reward_loss.weighting
-            #         rewards[reward_loss.name] = loss.item()
+                    torch.cuda.empty_cache()
+
+            if self.adaptive:
+                rewards["total"] = total_loss.item()
+                to_log += f"Total: {total_loss.item():.4f}"
+                total_reward_loss = total_loss.item()
+            else:
+                rewards["total"] = total_loss
+                to_log += f"Total: {total_loss:.4f}"
+                total_reward_loss = total_loss
+        
+
             
- 
-            # rewards["total"] = total_loss.item()
-            # to_log += f"Total: {total_loss.item():.4f}"
-            # total_reward_loss = total_loss.item()
-
-            # if self.regularize:
-            #     # compute in fp32 to avoid overflow
-            #     latent_norm = torch.linalg.vector_norm(latents).to(torch.float32)
-            #     log_norm = torch.log(latent_norm)
-            #     regularization = self.regularization_weight * (
-            #         0.5 * latent_norm**2 - (latent_dim - 1) * log_norm
-            #     )
-
-            #     rewards["norm"] = latent_norm.item()
-
-            #     total_loss += regularization.to(total_loss.dtype)
-           
-
+            
             to_log += f", Latent norm: {latent_norm.item()}, "
     
             if total_reward_loss < best_loss:
+                if iteration < 30 : 
+                    i30_best_loss = total_reward_loss
+                    i30_best_image = image
+                    i30_best_rewards = rewards
+                    i30_best_latents = latents.detach().cpu()    
                 best_loss = total_reward_loss
                 best_image = image
                 best_rewards = rewards
                 best_latents = latents.detach().cpu()
-            if iteration != self.n_iters - 1 and not self.imageselect:
+            if iteration != self.n_iters - 1:
                 latents.grad = sum(grad_clones)
                 gradient_norm = torch.nn.utils.clip_grad_norm_(latents, math.inf)
                 to_log += f"latent grad norm: {gradient_norm}"
                 optimizer.step()
-
-                # total_loss.backward()
-                # gradient_norm = torch.nn.utils.clip_grad_norm_(latents, self.grad_clip)
-                # to_log += f"latent grad norm: {gradient_norm}, "
-                # optimizer.step()
-
+                optimizer.zero_grad()
+            
             if self.save_all_images:
                 image_numpy = image.detach().cpu().permute(0, 2, 3, 1).float().numpy()
                 image_pil = DiffusionPipeline.numpy_to_pil(image_numpy)[0]
-                image_pil.save(f"{save_dir}/{iteration}.png")
-            if self.log_metrics:
-                logging.info(f"Iteration {iteration}: {to_log}")
+                image_pil.save(f"{save_dir}/{s}_{iteration}.png")
+            if self.save_every_10_image and iteration % 10 == 0: 
+                image_numpy = image.detach().cpu().permute(0, 2, 3, 1).float().numpy()
+                image_pil = DiffusionPipeline.numpy_to_pil(image_numpy)[0]
+                image_pil.save(f"{save_dir}/{s}_{iteration}.png")
+            if self.save_every_5_image and iteration % 5 == 0: 
+                image_numpy = image.detach().cpu().permute(0, 2, 3, 1).float().numpy()
+                image_pil = DiffusionPipeline.numpy_to_pil(image_numpy)[0]
+                image_pil.save(f"{save_dir}/{s}_{iteration}.png")
+
+            logging.info(f"Iteration {iteration}: {to_log}")
             if initial_rewards is None:
                 initial_rewards = rewards
         image_numpy = best_image.detach().cpu().permute(0, 2, 3, 1).float().numpy()
         best_image_pil = DiffusionPipeline.numpy_to_pil(image_numpy)[0]
-        if multi_apply_fn is not None:
-            multi_step_image = multi_apply_fn(best_latents.to("cuda"), prompt)
-            image_numpy = (
-                multi_step_image.detach().cpu().permute(0, 2, 3, 1).float().numpy()
-            )
-            best_image_pil = DiffusionPipeline.numpy_to_pil(image_numpy)[0]
-        return initial_image, best_image_pil, initial_rewards, best_rewards
+
+        i30_image_numpy = i30_best_image.detach().cpu().permute(0, 2, 3, 1).float().numpy()
+        i30_best_image_pil = DiffusionPipeline.numpy_to_pil(i30_image_numpy)[0]
+
+        return initial_image, best_image_pil, i30_best_image_pil, initial_rewards, best_rewards, i30_best_rewards

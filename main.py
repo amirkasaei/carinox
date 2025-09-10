@@ -1,3 +1,7 @@
+import sys
+# Add the project directory to sys.path to allow module imports
+sys.path.append('/Compositional-Noise-Optimization')
+
 import json
 import logging
 import os
@@ -12,40 +16,43 @@ from arguments import parse_args
 from models import get_model, get_multi_apply_fn
 from rewards import get_reward_losses
 from training import LatentNoiseTrainer, get_optimizer
-from evaluation.evaluator import Evaluator
 
+import pandas as pd
 
-import sys
-sys.path.append('/home/user01/amirKasaei/Compositional-Noise-Optimization')
+from collections import defaultdict
+def recursive_defaultdict():
+    return defaultdict(recursive_defaultdict)
 
+def defaultdict_to_dict(d):
+        if isinstance(d, defaultdict):
+            d = {k: defaultdict_to_dict(v) for k, v in d.items()}
+        return d
+
+# Serialize to JSON and Save
+def save_to_json(data, filename):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
 
 def main(args):
     seed_everything(args.seed)
-    bf.makedirs(f"{args.save_dir}/logs/{args.task}")
+    bf.makedirs(f"{args.save_dir}/logs/")
     # Set up logging and name settings
     logger = logging.getLogger()
     
-    if args.eval_dir:
-        evaluator = Evaluator(args.eval_model, args.cache_dir, args.eval_model_weighting, args.eval_dir, args.save_dir)
-        print(evaluator.evaluate())
-        return 
-        
     settings = (
         f"{args.setting}{'_'}"
-        f"{args.model}{'_' + args.prompt if args.task == 't2i-compbench' else ''}"
-        f"{'_no-optim' if args.no_optim else ''}_{args.seed if args.task != 'geneval' else ''}"
+        f"{args.model}{'_' + args.prompt_file}"
+        f"{'_' + ('adaptive' if not args.not_adaptive else 'normal')}"
+        f"{'_k' + str(args.k)}"
+        f"{'_no-optim' if args.no_optim else ''}_{args.seed}"
         f"_lr{args.lr}_gc{args.grad_clip}_iter{args.n_iters}"
         f"_reg{args.reg_weight if args.enable_reg else '0'}"
-        f"{'_pickscore' + str(args.pickscore_weighting) if args.enable_pickscore else ''}"
-        f"{'_clip' + str(args.clip_weighting) if args.enable_clip else ''}"
-        f"{'_hps' + str(args.hps_weighting) if args.enable_hps else ''}"
-        f"{'_imagereward' + str(args.imagereward_weighting) if args.enable_imagereward else ''}"
-        f"{'_aesthetic' + str(args.aesthetic_weighting) if args.enable_aesthetic else ''}"
-        f"{'_vqascore' + str(args.vqa_score_weighting) if args.enable_vqa_score else ''}"
-        f"{'_da_score' + str(args.da_score_weighting) if args.enable_da_score else ''}"
-        
+        f"{'_vqascore' + str(args.vqa_weight) if args.enable_vqa else ''}"
+        f"{'_da_score' + str(args.da_weight) if args.enable_da else ''}"
+        f"{'_imagereward' + str(args.imagereward_weight) if args.enable_imagereward else ''}"
+        f"{'_hps' + str(args.hps_weight) if args.enable_hps else ''}"
     )
-    file_stream = open(f"{args.save_dir}/logs/{args.task}/{settings}.txt", "w")
+    file_stream = open(f"{args.save_dir}/logs/{settings}.txt", "w")
     handler = logging.StreamHandler(file_stream)
     formatter = logging.Formatter("%(asctime)s - %(message)s")
     handler.setFormatter(formatter)
@@ -64,13 +71,19 @@ def main(args):
         dtype = torch.float32
     elif args.dtype == "float16":
         dtype = torch.float16
+    
     # Get reward losses
     reward_losses = get_reward_losses(args, dtype, device, args.cache_dir)
 
+    # Get adabtive data
+    categories, weights = None, None
+    if not args.not_adaptive:
+        categories = pd.read_json(f"assets/{args.category_file}.json")
+        weights = pd.read_json(f"assets/{args.adaptive_weights_file}.json")
+
     # Get model and noise trainer
-    pipe = get_model(
-        args.model, dtype, device, args.cache_dir, args.memsave, args.cpu_offloading
-    )
+    pipe = get_model(args.model, dtype, device, args.cache_dir)
+
     trainer = LatentNoiseTrainer(
         reward_losses=reward_losses,
         model=pipe,
@@ -78,20 +91,20 @@ def main(args):
         n_inference_steps=args.n_inference_steps,
         seed=args.seed,
         save_all_images=args.save_all_images,
+        save_every_10_image=args.save_every_10_image,
+        save_every_5_image=args.save_every_5_image,
+        adaptive=not args.not_adaptive,
         device=device,
         no_optim=args.no_optim,
         regularize=args.enable_reg,
         regularization_weight=args.reg_weight,
         grad_clip=args.grad_clip,
-        log_metrics=args.task == "single" or not args.no_optim,
-        imageselect=args.imageselect,
+        categories=categories,
+        weights=weights
     )
 
     # Create latents
-    if args.model == "flux":
-        # currently only support 512x512 generation
-        shape = (1, 16 * 64, 64)
-    elif args.model != "pixart":
+    if args.model != "pixart":
         height = pipe.unet.config.sample_size * pipe.vae_scale_factor
         width = pipe.unet.config.sample_size * pipe.vae_scale_factor
         shape = (
@@ -122,46 +135,68 @@ def main(args):
     else:
         multi_apply_fn = None
 
-    if args.task == "single":
-        init_latents = torch.randn(shape, device=device, dtype=dtype)
-        latents = torch.nn.Parameter(init_latents, requires_grad=enable_grad)
-        optimizer = get_optimizer(args.optim, latents, args.lr, args.nesterov)
-        save_dir = f"{args.save_dir}/{args.task}/{settings}/{args.prompt[:150]}"
-        os.makedirs(f"{save_dir}", exist_ok=True)
-        init_image, best_image, total_init_rewards, total_best_rewards = trainer.train(
-            latents, args.prompt, optimizer, save_dir, multi_apply_fn
-        )
-        best_image.save(f"{save_dir}/best_image.png")
-        init_image.save(f"{save_dir}/init_image.png")
-    elif args.task == "example-prompts":
-        fo = open("assets/example_prompts.txt", "r")
-        prompts = fo.readlines()
-        fo.close()
+    fo = open(f"assets/{args.prompt_file}.txt", "r")
+    prompts = fo.readlines()
+    fo.close()
+
+    # seeds = torch.randint(0, 100, (int(args.k),))
+    # seeds[0] = 0
+
+    # resulted seeds:
+    seeds = [0, 94, 58, 45, 15][:int(args.k)]
+    
+    holder = defaultdict(recursive_defaultdict)
+
+    # Used seed (for prompt) instead of prompt (for seed) for better compatibility with ReNO's seed setting
+    for n, seed in enumerate(seeds):    
+        # seed = seed.item()
+        seed_everything(seed)
         for i, prompt in tqdm(enumerate(prompts)):
-            # Get new latents and optimizer
-            seed_everything(0)
             
-            # torch.manual_seed(0)
+            
             init_latents = torch.randn(shape, device=device, dtype=dtype)
             latents = torch.nn.Parameter(init_latents, requires_grad=enable_grad)
-            # seed_everything(1)
             optimizer = get_optimizer(args.optim, latents, args.lr, args.nesterov)
 
             prompt = prompt.strip()
             name = f"{i:03d}_{prompt[:150]}.png"
-            save_dir = f"{args.save_dir}/{args.task}/{settings}/{name}"
+            save_dir = f"{args.save_dir}/{settings}/{name}"
             os.makedirs(save_dir, exist_ok=True)
-            init_image, best_image, init_rewards, best_rewards = trainer.train(
-                latents, prompt, optimizer, save_dir, multi_apply_fn
+            init_image, best_image, i30_best_image, init_rewards, best_rewards, i30_best_rewards = trainer.train(
+                latents, prompt, optimizer, save_dir, multi_apply_fn, seed
             )
+            
+            holder[prompt][int(seed)]["best_loss"] = best_rewards["total"]
+            holder[prompt][int(seed)]["best_i30_loss"] = i30_best_rewards["total"]
+            holder[prompt][int(seed)]["initial_loss"] = init_rewards["total"]
+
+            
+            if n == 0 :
+                holder[prompt]["min"]["best_loss"] = best_rewards["total"]
+                holder[prompt]["min"]["best_i30_loss"] = i30_best_rewards["total"]
+                holder[prompt]["min"]["initial_loss"] = init_rewards["total"]
+                best_image.save(f"{save_dir}/best_image.png")
+
+            else:
+                if holder[prompt]["min"]["best_loss"] > best_rewards["total"]:
+                    holder[prompt]["min"]["best_loss"] = best_rewards["total"]
+                    holder[prompt]["min"]["initial_loss"] = init_rewards["total"]
+                    best_image.save(f"{save_dir}/best_image.png")
+                if holder[prompt]["min"]["best_i30_loss"] > i30_best_rewards["total"]:
+                    holder[prompt]["min"]["best_i30_loss"] = i30_best_rewards["total"]
+                    holder[prompt]["min"]["i30_initial_loss"] = init_rewards["total"]
+                    i30_best_image.save(f"{save_dir}/i30_best_image.png")
             if i == 0:
                 total_best_rewards = {k: 0.0 for k in best_rewards.keys()}
-                total_init_rewards = {k: 0.0 for k in best_rewards.keys()}
+                total_init_rewards = {k: 0.0 for k in best_rewards.keys()}            
+            
             for k in best_rewards.keys():
                 total_best_rewards[k] += best_rewards[k]
                 total_init_rewards[k] += init_rewards[k]
-            best_image.save(f"{save_dir}/best_image.png")
-            init_image.save(f"{save_dir}/init_image.png")
+            best_image.save(f"{save_dir}/{seed}_best_image.png")
+            init_image.save(f"{save_dir}/{seed}_init_image.png")
+            i30_best_image.save(f"{save_dir}/{seed}_i30_best_image.png")
+            
             logging.info(f"Initial rewards: {init_rewards}")
             logging.info(f"Best rewards: {best_rewards}")
         for k in total_best_rewards.keys():
@@ -169,141 +204,18 @@ def main(args):
             total_init_rewards[k] /= len(prompts)
 
         # save results to directory
-        with open(f"{args.save_dir}/example-prompts/{settings}/results.txt", "w") as f:
+        with open(f"{args.save_dir}/{settings}/results{seed}.txt", "w") as f:
             f.write(
                 f"Mean initial all rewards: {total_init_rewards}\n"
                 f"Mean best all rewards: {total_best_rewards}\n"
             )
-    elif args.task == "t2i-compbench":
-        prompt_list_file = f"../T2I-CompBench/examples/dataset/{args.prompt}.txt"
-        fo = open(prompt_list_file, "r")
-        prompts = fo.readlines()
-        fo.close()
-        os.makedirs(f"{args.save_dir}/{args.task}/{settings}/samples", exist_ok=True)
-        for i, prompt in tqdm(enumerate(prompts)):
-            # Get new latents and optimizer
-            init_latents = torch.randn(shape, device=device, dtype=dtype)
-            latents = torch.nn.Parameter(init_latents, requires_grad=enable_grad)
-            optimizer = get_optimizer(args.optim, latents, args.lr, args.nesterov)
+        
+        # log total rewards
+        logging.info(f"Mean initial rewards: {total_init_rewards}")
+        logging.info(f"Mean best rewards: {total_best_rewards}")
+    regular_dict_holder = defaultdict_to_dict(holder)
 
-            prompt = prompt.strip()
-            init_image, best_image, init_rewards, best_rewards = trainer.train(
-                latents, prompt, optimizer, None, multi_apply_fn
-            )
-            if i == 0:
-                total_best_rewards = {k: 0.0 for k in best_rewards.keys()}
-                total_init_rewards = {k: 0.0 for k in best_rewards.keys()}
-            for k in best_rewards.keys():
-                total_best_rewards[k] += best_rewards[k]
-                total_init_rewards[k] += init_rewards[k]
-            name = f"{prompt}_{i:06d}.png"
-            best_image.save(f"{args.save_dir}/{args.task}/{settings}/samples/{name}")
-            logging.info(f"Initial rewards: {init_rewards}")
-            logging.info(f"Best rewards: {best_rewards}")
-        for k in total_best_rewards.keys():
-            total_best_rewards[k] /= len(prompts)
-            total_init_rewards[k] /= len(prompts)
-    elif args.task == "parti-prompts":
-        parti_dataset = load_dataset("nateraw/parti-prompts", split="train")
-        total_reward_diff = 0.0
-        total_best_reward = 0.0
-        total_init_reward = 0.0
-        total_improved_samples = 0
-        for index, sample in enumerate(parti_dataset):
-            os.makedirs(
-                f"{args.save_dir}/{args.task}/{settings}/{index}", exist_ok=True
-            )
-            prompt = sample["Prompt"]
-            init_image, best_image, init_rewards, best_rewards = trainer.train(
-                latents, prompt, optimizer, multi_apply_fn
-            )
-            best_image.save(
-                f"{args.save_dir}/{args.task}/{settings}/{index}/best_image.png"
-            )
-            open(
-                f"{args.save_dir}/{args.task}/{settings}/{index}/prompt.txt", "w"
-            ).write(
-                f"{prompt} \n Initial Rewards: {init_rewards} \n Best Rewards: {best_rewards}"
-            )
-            logging.info(f"Initial rewards: {init_rewards}")
-            logging.info(f"Best rewards: {best_rewards}")
-            initial_reward = init_rewards[args.benchmark_reward]
-            best_reward = best_rewards[args.benchmark_reward]
-            total_reward_diff += best_reward - initial_reward
-            total_best_reward += best_reward
-            total_init_reward += initial_reward
-            if best_reward < initial_reward:
-                total_improved_samples += 1
-            if i == 0:
-                total_best_rewards = {k: 0.0 for k in best_rewards.keys()}
-                total_init_rewards = {k: 0.0 for k in best_rewards.keys()}
-            for k in best_rewards.keys():
-                total_best_rewards[k] += best_rewards[k]
-                total_init_rewards[k] += init_rewards[k]
-            # Get new latents and optimizer
-            init_latents = torch.randn(shape, device=device, dtype=dtype)
-            latents = torch.nn.Parameter(init_latents, requires_grad=enable_grad)
-            optimizer = get_optimizer(args.optim, latents, args.lr, args.nesterov)
-        improvement_percentage = total_improved_samples / parti_dataset.num_rows
-        mean_best_reward = total_best_reward / parti_dataset.num_rows
-        mean_init_reward = total_init_reward / parti_dataset.num_rows
-        mean_reward_diff = total_reward_diff / parti_dataset.num_rows
-        logging.info(
-            f"Improvement percentage: {improvement_percentage:.4f}, "
-            f"mean initial reward: {mean_init_reward:.4f}, "
-            f"mean best reward: {mean_best_reward:.4f}, "
-            f"mean reward diff: {mean_reward_diff:.4f}"
-        )
-        for k in total_best_rewards.keys():
-            total_best_rewards[k] /= len(parti_dataset)
-            total_init_rewards[k] /= len(parti_dataset)
-        # save results
-        os.makedirs(f"{args.save_dir}/parti-prompts/{settings}", exist_ok=True)
-        with open(f"{args.save_dir}/parti-prompts/{settings}/results.txt", "w") as f:
-            f.write(
-                f"Mean improvement: {improvement_percentage:.4f}, "
-                f"mean initial reward: {mean_init_reward:.4f}, "
-                f"mean best reward: {mean_best_reward:.4f}, "
-                f"mean reward diff: {mean_reward_diff:.4f}\n"
-                f"Mean initial all rewards: {total_init_rewards}\n"
-                f"Mean best all rewards: {total_best_rewards}"
-            )
-    elif args.task == "geneval":
-        prompt_list_file = "../geneval/prompts/evaluation_metadata.jsonl"
-        with open(prompt_list_file) as fp:
-            metadatas = [json.loads(line) for line in fp]
-        outdir = f"{args.save_dir}/{args.task}/{settings}"
-        for index, metadata in enumerate(metadatas):
-            # Get new latents and optimizer
-            init_latents = torch.randn(shape, device=device, dtype=dtype)
-            latents = torch.nn.Parameter(init_latents, requires_grad=True)
-            optimizer = get_optimizer(args.optim, latents, args.lr, args.nesterov)
-
-            prompt = metadata["prompt"]
-            init_image, best_image, init_rewards, best_rewards = trainer.train(
-                latents, prompt, optimizer, None, multi_apply_fn
-            )
-            logging.info(f"Initial rewards: {init_rewards}")
-            logging.info(f"Best rewards: {best_rewards}")
-            outpath = f"{outdir}/{index:0>5}"
-            os.makedirs(f"{outpath}/samples", exist_ok=True)
-            with open(f"{outpath}/metadata.jsonl", "w") as fp:
-                json.dump(metadata, fp)
-            best_image.save(f"{outpath}/samples/{args.seed:05}.png")
-            if i == 0:
-                total_best_rewards = {k: 0.0 for k in best_rewards.keys()}
-                total_init_rewards = {k: 0.0 for k in best_rewards.keys()}
-            for k in best_rewards.keys():
-                total_best_rewards[k] += best_rewards[k]
-                total_init_rewards[k] += init_rewards[k]
-        for k in total_best_rewards.keys():
-            total_best_rewards[k] /= len(parti_dataset)
-            total_init_rewards[k] /= len(parti_dataset)
-    else:
-        raise ValueError(f"Unknown task {args.task}")
-    # log total rewards
-    logging.info(f"Mean initial rewards: {total_init_rewards}")
-    logging.info(f"Mean best rewards: {total_best_rewards}")
+    save_to_json(regular_dict_holder, f"{args.save_dir}/{settings}/holder.json")
 
 
 if __name__ == "__main__":

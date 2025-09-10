@@ -1,0 +1,98 @@
+{
+    "a purple banana and pink cow":[
+        [
+            "color",
+            1.0
+        ]
+    ],
+    "a red cow and a brown dog": [
+        [
+            "color",
+            1.0
+        ]
+    ],
+    "a big kangaroo and a small mouse": [
+        [
+            "shape",
+            1.0
+        ]
+    ],
+    "a tall giraffe and a small mouse": [
+        [
+            "shape",
+            1.0
+        ]
+    ],
+    "rubber gloves and a leather bag": [
+        [
+            "texture",
+            1.0
+        ]
+    ],
+    "a rubber band and a wooden desk": [
+        [
+            "texture",
+            1.0
+        ]
+    ],
+    "a mouse near a book": [
+        [
+            "2d_spatial",
+            1.0
+        ]
+    ],
+    "a turtle near a lamp": [
+        [
+            "2d_spatial",
+            1.0
+        ]
+    ],
+    "a leaf is rustling in the wind": [
+        [
+            "non_spatial",
+            1.0
+        ]
+    ],
+    "a couple is ice skating at the rink": [
+        [
+            "non_spatial",
+            1.0
+        ]
+    ],
+    "the black coffee mug was on top of the silver coaster": [
+        [
+            "complex",
+            1.0
+        ]
+    ],
+    "the warm yellow light shone down on the colorful garden": [
+        [
+            "complex",
+            1.0
+        ]
+    ],
+    "a bag behind a woman": [
+        [
+            "3d_spatial",
+            1.0
+        ]
+    ],
+    "a woman behind a man": [
+        [
+            "3d_spatial",
+            1.0
+        ]
+    ],
+    "one chicken, one horse, two birds and one camel": [
+        [
+            "numeracy",
+            1.0
+        ]
+    ],
+    "three sofas and four guitars decorated the lounge": [
+        [
+            "numeracy",
+            1.0
+        ]
+    ]
+}

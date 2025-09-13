@@ -139,11 +139,11 @@ def main(args):
     prompts = fo.readlines()
     fo.close()
 
-    # seeds = torch.randint(0, 100, (int(args.k),))
-    # seeds[0] = 0
+    seeds = torch.randint(0, 100, (int(args.k),))
+    seeds[0] = 0
 
     # resulted seeds:
-    seeds = [0, 94, 58, 45, 15][:int(args.k)]
+    # seeds = [0, 94, 58, 45, 15][:int(args.k)]
     
     holder = defaultdict(recursive_defaultdict)
 

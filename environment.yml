@@ -1,4 +1,4 @@
-name: ino
+name: carinox
 channels:
   - conda-forge
   - nvidia

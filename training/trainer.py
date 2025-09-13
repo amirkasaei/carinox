@@ -29,10 +29,7 @@ class LatentNoiseTrainer:
         save_all_images: bool = False,
         save_every_10_image: bool = False,
         save_every_5_image: bool = False,
-        adaptive: bool = True,
         device: torch.device = torch.device("cuda"),
-        categories: pd = None,
-        weights: pd = None
     ):
       
         self.reward_losses = reward_losses
@@ -47,9 +44,6 @@ class LatentNoiseTrainer:
         self.save_every_10_image = save_every_10_image
         self.save_every_5_image = save_every_5_image
         self.device = device
-        self.categories_ = categories
-        self.weights_ = weights
-        self.adaptive = adaptive
         self.grad_clip = grad_clip
 
     def train(
@@ -74,9 +68,6 @@ class LatentNoiseTrainer:
         i30_best_image = None
         i30_best_rewards = None
         i30_best_latents = None
-
-        if self.adaptive:
-            adaptiveWeight = self.weights_[self.categories_[prompt]]
 
         for iteration in range(self.n_iters):
             to_log = ""
@@ -122,27 +113,23 @@ class LatentNoiseTrainer:
                     to_log += f"{reward_loss.name}: {loss.item():.4f}, "
                     rewards[reward_loss.name] = loss.item()
 
-                    total_loss += loss.item() * (adaptiveWeight[reward_loss.name] if self.adaptive else 1)
-                    loss *= reward_loss.weighting * (adaptiveWeight[reward_loss.name] if self.adaptive else 1)
+                    total_loss += loss.item()
+                    loss *= reward_loss.weighting 
                     if self.regularize:
                         loss += regularization.to(loss.dtype)
 
                     loss.backward(retain_graph=True)
+
                     gradient_norm = torch.nn.utils.clip_grad_norm_(latents, self.grad_clip)
                     to_log += f"{reward_loss.name} grad norm: {gradient_norm}, "
+
                     grad_clones.append(latents.grad.clone())
                     optimizer.zero_grad()
-            
-                    torch.cuda.empty_cache()
 
-            if self.adaptive:
-                rewards["total"] = total_loss.item()
-                to_log += f"Total: {total_loss.item():.4f}"
-                total_reward_loss = total_loss.item()
-            else:
-                rewards["total"] = total_loss
-                to_log += f"Total: {total_loss:.4f}"
-                total_reward_loss = total_loss
+
+            rewards["total"] = total_loss
+            to_log += f"Total: {total_loss:.4f}"
+            total_reward_loss = total_loss
         
 
             
@@ -161,7 +148,7 @@ class LatentNoiseTrainer:
                 best_latents = latents.detach().cpu()
             if iteration != self.n_iters - 1:
                 latents.grad = sum(grad_clones)
-                gradient_norm = torch.nn.utils.clip_grad_norm_(latents, math.inf)
+                gradient_norm = torch.nn.utils.clip_grad_norm_(latents, self.grad_clip)
                 to_log += f"latent grad norm: {gradient_norm}"
                 optimizer.step()
                 optimizer.zero_grad()

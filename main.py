@@ -42,7 +42,6 @@ def main(args):
     settings = (
         f"{args.setting}{'_'}"
         f"{args.model}{'_' + args.prompt_file}"
-        f"{'_' + ('adaptive' if not args.not_adaptive else 'normal')}"
         f"{'_k' + str(args.k)}"
         f"{'_no-optim' if args.no_optim else ''}_{args.seed}"
         f"_lr{args.lr}_gc{args.grad_clip}_iter{args.n_iters}"
@@ -75,12 +74,6 @@ def main(args):
     # Get reward losses
     reward_losses = get_reward_losses(args, dtype, device, args.cache_dir)
 
-    # Get adabtive data
-    categories, weights = None, None
-    if not args.not_adaptive:
-        categories = pd.read_json(f"assets/{args.category_file}.json")
-        weights = pd.read_json(f"assets/{args.adaptive_weights_file}.json")
-
     # Get model and noise trainer
     pipe = get_model(args.model, dtype, device, args.cache_dir)
 
@@ -93,14 +86,11 @@ def main(args):
         save_all_images=args.save_all_images,
         save_every_10_image=args.save_every_10_image,
         save_every_5_image=args.save_every_5_image,
-        adaptive=not args.not_adaptive,
         device=device,
         no_optim=args.no_optim,
         regularize=args.enable_reg,
         regularization_weight=args.reg_weight,
         grad_clip=args.grad_clip,
-        categories=categories,
-        weights=weights
     )
 
     # Create latents
@@ -139,11 +129,11 @@ def main(args):
     prompts = fo.readlines()
     fo.close()
 
-    seeds = torch.randint(0, 100, (int(args.k),))
-    seeds[0] = 0
+    # seeds = torch.randint(0, 100, (int(args.k),))
+    # seeds[0] = 0
 
     # resulted seeds:
-    # seeds = [0, 94, 58, 45, 15][:int(args.k)]
+    seeds = [0, 94, 58, 45, 15][:int(args.k)]
     
     holder = defaultdict(recursive_defaultdict)
 
@@ -152,6 +142,7 @@ def main(args):
         # seed = seed.item()
         seed_everything(seed)
         for i, prompt in tqdm(enumerate(prompts)):
+            
             
             
             init_latents = torch.randn(shape, device=device, dtype=dtype)

@@ -44,7 +44,6 @@ def parse_args():
     parser.add_argument("--no_optim", default=False, action="store_true")
     parser.add_argument("--dtype", type=str, help="Data type to use", default="float16")
     parser.add_argument("--device_id", type=str, help="Device ID to use", default=None)
-    parser.add_argument("--not_adaptive", default=False, action="store_true")
     parser.add_argument("--k", default=1, help="primary seed")
     # for example, while running seed = 5, save the result for seed = 3
     parser.add_argument("--x", default=1, help="secondary seed")

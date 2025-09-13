@@ -1,7 +1,7 @@
 # **CARINOX**
 
 ## **Setup**
-To install the necessary dependencies, use the provided `environment.yml` file. Additionally, run the downloader script to acquire any required assets.
+To install the necessary dependencies, use the provided `environment.yml` file. Additionally, run the hps_installer script to acquire any required assets.
 
 ### **Installation**
 ```bash
@@ -55,4 +55,5 @@ Modify default paths, hyperparameters, and reward settings in `arguments.py`:
 - Cache and output directories
 - Model hyperparameters
 - Reward weighting
+
 - Image saving preferences

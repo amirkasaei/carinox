@@ -1,0 +1,19 @@
+:root {--bg:#0b0c10;--bg2:#11131a;--line:#1d2231;--text:#e9eef4;--muted:#b9c0c7;--brand:#7fd8ff}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+a{color:var(--brand);text-decoration:none}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+.topbar{position:sticky;top:0;background:rgba(11,12,16,.9);border-bottom:1px solid var(--line)}
+.topbar .inner{display:flex;justify-content:space-between;align-items:center;height:56px}
+.brand{font-weight:700;color:#fff}
+.nav a{margin-left:16px;color:var(--muted)}
+.hero{padding:56px 0;text-align:center;background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+.hero h1{font-size:44px;margin:0 0 8px}
+.hero .subtitle{color:var(--muted)}
+.btn{display:inline-block;background:var(--brand);color:#001018;padding:10px 14px;border-radius:10px;margin-right:8px}
+.btn.ghost{background:transparent;border:1px solid var(--brand);color:var(--brand)}
+.section{padding:56px 0;border-top:1px solid var(--line)}
+.alt{background:var(--bg2)}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{border:1px solid var(--line);padding:6px 10px;text-align:center}
+pre.code{background:#0b0e14;border:1px solid var(--line);border-radius:6px;padding:10px;overflow:auto}
+.footer{padding:28px 0;text-align:center;color:var(--muted);border-top:1px solid var(--line)}

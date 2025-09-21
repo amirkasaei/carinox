@@ -42,17 +42,26 @@ python main.py --model {"sd-turbo" | "sdxl-turbo" | "pixart"} \
                [--vqa_weight <float>] [--da_weight <float>] \
                [--reg_weight <float>]
 ```
+
 ### **Example Commands**
 
+#### 1. Basic Image Generation with SD-Turbo
+Generates images from prompts listed in `example_prompts.txt` (located in `assets`) and saves all generated images.
 ```bash
 python main.py --model "sd-turbo" --prompt_file "example_prompts" --save_all_images
 ```
 
+#### 2. Multi-Seed Optimization with PixArt
+Runs optimization for 3 seeds (`--k 3`) using the PixArt model, with a specified learning rate (`--lr 1`).
 ```bash
-python main.py --model "pixart" --k 3 --lr 5 --save_all_images
+python main.py --model "pixart" --k 3 --lr 1
 ```
 
+#### 3. Custom Optimization with SDXL-Turbo
+Uses the SDXL-Turbo model while disabling ImageReward and DA score.  
+Applies custom weighting: **HPS = 3.0** and **VQA = 0.5** to adjust the contribution of each model.
 ```bash
 python main.py --model "sdxl-turbo" --disable_da --disable_imagereward --hps_weight 3.0 --vqa_weight 0.5
 ```
+
 

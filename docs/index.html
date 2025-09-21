@@ -1,268 +1,135 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CARINOX — Reward-Guided Noise Exploration & Refinement</title>
-  <meta name="description" content="CARINOX: Reward-guided initial noise exploration (best-of-N) and refinement (gradient ascent) for compositional text-to-image generation.">
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="description" content="CARINOX: Category-Aware Reward-based Initial Noise Optimization and Exploration">
+  <meta name="keywords" content="CARINOX, Text-to-Image, Diffusion, Noise Optimization, Seed Exploration, Reward Models, Inference-Time Scaling">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CARINOX: Category-Aware Reward-based Initial Noise Optimization and Exploration</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+
 </head>
 <body>
 
-<!-- Topbar -->
-<header class="topbar">
-  <div class="wrap inner">
-    <a class="brand" href="#">CARINOX</a>
-    <nav class="nav">
-      <a href="#overview">Overview</a>
-      <a href="#method">Method</a>
-      <a href="#benchmarks">Benchmarks</a>
-      <a href="#qual">Qualitative</a>
-      <a href="#results">Leaderboard</a>
-      <a href="#download">Download</a>
-      <a href="#paper">Paper</a>
-    </nav>
-  </div>
-</header>
-
-<!-- Hero -->
 <section class="hero">
-  <div class="wrap">
-    <div class="pills">
-      <span class="pill">Training-Free</span>
-      <span class="pill">Best-of-N + Gradient Ascent</span>
-      <span class="pill">Compositional Alignment</span>
-    </div>
-    <h1>CARINOX</h1>
-    <p class="subtitle">
-      Reward-guided initial noise <em>exploration</em> (best-of-N) and <em>refinement</em> (gradient ascent) for compositional text-to-image generation.
-    </p>
-    <div class="cta">
-      <a class="btn" href="#paper">Paper</a>
-      <a class="btn ghost" href="https://github.com/USERNAME/carinox" target="_blank" rel="noopener">Code</a>
-    </div>
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">
+            <img src="./static/images/carinox-icon-fc.png" 
+                alt="CARINOX Icon" 
+                style="height:60px; vertical-align:middle; margin-right:-15px; margin-top:-10px;">
+            <span style="color:#6C5CE7; font-weight: bold; font-style: italic">CARINOX</span>
+            <br>
+            Category-Aware Reward-based Initial Noise Optimization and Exploration
+            <br>
+             
+            <!-- <span style="font-size: 0.8em; font-weight: normal;"> 
+              Transactions on Machine Learning Research (TMLR) — Under Review 
+            </span> -->
+          </h1>
 
-    <!-- Teaser image frame (replace src) -->
-    <figure class="teaser">
-      <img src="assets/imgs/teaser.png" alt="CARINOX teaser (replace this)" />
-      <figcaption>Teaser. Replace with your composite/banner image.</figcaption>
-    </figure>
-  </div>
-</section>
 
-<!-- Overview -->
-<section id="overview" class="section">
-  <div class="wrap">
-    <h2>Overview</h2>
-    <div class="grid2">
-      <div class="card">
-        <h3>Key ideas</h3>
-        <ul class="tight">
-          <li>Category-aware composite rewards (fixed set chosen via correlation with human scores).</li>
-          <li><strong>Best-of-N exploration</strong> to avoid unlucky initializations and improve coverage.</li>
-          <li><strong>Gradient ascent</strong> on initial noise with per-reward gradient clipping (Multi-Clip) + latent regularization.</li>
-        </ul>
-        <h3>Why it works</h3>
-        <ul class="tight">
-          <li>No single metric is best for all categories → combine complementary signals.</li>
-          <li>Discrete search (exploration) + continuous refinement (optimization) → robust & stable.</li>
-          <li>Clipping prevents any reward from dominating → preserves realism.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>At a glance</h3>
-        <div class="kv">
-          <div>Backbone</div><div>One-step T2I (e.g., SD-Turbo)</div>
-          <div>Input</div><div>Prompt p, seeds S₁…Sₙ</div>
-          <div>Rewards</div><div>Embedding-based + VQA (category-aware selection)</div>
-          <div>Search</div><div>Best-of-N across seeds</div>
-          <div>Refinement</div><div>Gradient ascent (Multi-Clip, regularization)</div>
-          <div>Output</div><div>Best image by composite reward</div>
+          <div class="is-size-5 publication-authors">
+          <div class="author-row">
+            <span class="author-block"><a href="#">Seyed Amir Kasaei</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="#">Ali Aghayari</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="#">Arash Marioriyad</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="#">Niki Sepasian</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="#">Shayan Baghayi Nejad</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="#">MohammadAmin Fazli</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="#">Mahdieh Soleymani Baghshah</a><sup>1</sup>,</span>
+            <span class="author-block"><a href="#">Mohammad Hossein Rohban</a><sup>1</sup></span>
+          </div>
+        </div>
+        <div class="is-size-5 publication-authors">
+          <span class="author-block"><sup>1</sup>Department of Computer Engineering, Sharif University of Technology</span>
+        </div>
+
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <span class="link-block"><a href="#" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="ai ai-arxiv"></i></span><span>arXiv</span></a></span>
+              <span class="link-block"><a href="https://github.com/amirkasaei/CARINOX" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fab fa-github"></i></span><span>Code</span></a></span>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Method -->
-<section id="method" class="section alt">
-  <div class="wrap">
-    <h2>Method</h2>
-    <div class="grid2">
-      <div class="card">
-        <h3>Pipeline</h3>
-        <ol class="tight">
-          <li>Select a fixed reward combination per category from a correlation study.</li>
-          <li>Sample N noises; generate; score; keep top-k seeds (best-of-N).</li>
-          <li>For each kept seed, ascend in latent space with per-metric clipping and latent regularization.</li>
-          <li>Return the image with the highest composite reward.</li>
-        </ol>
-        <pre class="code">
-for t in 1..T:
-  img = Gθ(ε, p)
-  grads = [ clip(∂r_i/∂ε, τ) for r_i in rewards ]
-  ε ← ε + η · ( Σ grads − λ_reg · ∂||ε||/∂ε )
-        </pre>
-      </div>
-      <div class="card">
-        <h3>Method figure (upload your image)</h3>
-        <figure class="figure">
-          <!-- Replace src below with your method diagram -->
-          <img src="assets/imgs/method.png" alt="Method diagram (replace this)" />
-          <figcaption>Method overview. Replace with your pipeline figure.</figcaption>
-        </figure>
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <div style="max-width: 800px; margin: 0 auto;">
+        <h2 class="subtitle has-text-centered">
+          Unifying noise optimization and best-of-N exploration with systematic reward selection for reliable compositional alignment.
+        </h2>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Benchmarks -->
-<section id="benchmarks" class="section">
-  <div class="wrap">
-    <h2>Benchmarks</h2>
-    <div class="grid3">
-      <div class="card">
-        <h3>T2I-CompBench++</h3>
-        <p>Category-wise evaluation: color, shape, texture, 2D/3D spatial, non-spatial, numeracy, complex.</p>
-      </div>
-      <div class="card">
-        <h3>HRS</h3>
-        <p>Human-Relative Score evaluates broader aspects of alignment beyond compositionality.</p>
-      </div>
-      <div class="card">
-        <h3>Human Eval</h3>
-        <p>Backbone-agnostic pairwise preferences for CARINOX vs baselines.</p>
+
+<section>
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <br><br>
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Text-to-image diffusion models, such as Stable Diffusion, can produce high-quality and diverse images but often fail to achieve compositional alignment, particularly when prompts describe complex object relationships, attributes, or spatial arrangements. Recent inference-time approaches address this by optimizing or exploring the initial noise under the guidance of reward functions that score text–image alignment—without requiring model fine-tuning. While promising, each strategy has intrinsic limitations when used alone: optimization can stall due to poor initialization or unfavorable search trajectories, whereas exploration may require a prohibitively large number of samples to locate a satisfactory output. Our analysis further shows that neither single reward metrics nor ad-hoc combinations reliably capture all aspects of compositionality, leading to weak or inconsistent guidance. To overcome these challenges, we present Category-Aware Reward-based Initial Noise Optimization and EXploration (CARINOX), a unified framework that combines noise optimization and exploration with a principled reward selection procedure grounded in correlation with human judgments. Evaluations on two complementary benchmarks—covering diverse compositional challenges—show that CARINOX raises average alignment scores by +16% on T2I-CompBench++ and +11% on the HRS benchmark, consistently outperforming state-of-the-art optimization and exploration-based methods across all major categories, while preserving image quality and diversity.
+          </p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Qualitative gallery -->
-<section id="qual" class="section alt">
-  <div class="wrap">
-    <h2>Qualitative Comparisons</h2>
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{Kasaei2025CARINOX,
+  title={CARINOX: Category-Aware Reward-based Initial Noise Optimization and Exploration for Compositional Text-to-Image Generation},
+  author={Kasaei, Seyed Amir and Aghayari, Ali and Marioriyad, Arash and Sepasian, Niki and Baghayi Nejad, Shayan and Fazli, MohammadAmin and Soleymani Baghshah, Mahdieh and Rohban, Mohammad Hossein},
+  journal={Transactions on Machine Learning Research},
+  year={2025},
+  url={https://your-project-site/}
+}</code></pre>
+  </div>
+</section>
 
-    <!-- Block A: side-by-side rows (prompt, baseline, ours) -->
-    <div class="gallery-block">
-      <h3>Examples A (replace each image)</h3>
-      <div class="gallery grid-3">
-        <figure>
-          <img src="assets/imgs/qualA_1_baseline.jpg" alt="Baseline A1 (replace)" />
-          <figcaption>Baseline</figcaption>
-        </figure>
-        <figure>
-          <img src="assets/imgs/qualA_1_ours.jpg" alt="Ours A1 (replace)" />
-          <figcaption>Ours</figcaption>
-        </figure>
-        <figure>
-          <img src="assets/imgs/qualA_1_gt.jpg" alt="Reference A1 (optional)" />
-          <figcaption>Reference (optional)</figcaption>
-        </figure>
-      </div>
-
-      <div class="gallery grid-3">
-        <figure>
-          <img src="assets/imgs/qualA_2_baseline.jpg" alt="Baseline A2 (replace)" />
-          <figcaption>Baseline</figcaption>
-        </figure>
-        <figure>
-          <img src="assets/imgs/qualA_2_ours.jpg" alt="Ours A2 (replace)" />
-          <figcaption>Ours</figcaption>
-        </figure>
-        <figure>
-          <img src="assets/imgs/qualA_2_gt.jpg" alt="Reference A2 (optional)" />
-          <figcaption>Reference (optional)</figcaption>
-        </figure>
-      </div>
-    </div>
-
-    <!-- Block B: category tiles (like T2I-CompBench page) -->
-    <div class="gallery-block">
-      <h3>Category Showcase</h3>
-      <div class="grid6 tiles">
-        <!-- Replace each src with your thumbnails -->
-        <figure class="tile">
-          <img src="assets/imgs/cat_color.jpg" alt="Color (replace)" />
-          <figcaption>Color</figcaption>
-        </figure>
-        <figure class="tile">
-          <img src="assets/imgs/cat_shape.jpg" alt="Shape (replace)" />
-          <figcaption>Shape</figcaption>
-        </figure>
-        <figure class="tile">
-          <img src="assets/imgs/cat_texture.jpg" alt="Texture (replace)" />
-          <figcaption>Texture</figcaption>
-        </figure>
-        <figure class="tile">
-          <img src="assets/imgs/cat_2d.jpg" alt="2D Spatial (replace)" />
-          <figcaption>2D Spatial</figcaption>
-        </figure>
-        <figure class="tile">
-          <img src="assets/imgs/cat_3d.jpg" alt="3D Spatial (replace)" />
-          <figcaption>3D Spatial</figcaption>
-        </figure>
-        <figure class="tile">
-          <img src="assets/imgs/cat_numeracy.jpg" alt="Numeracy (replace)" />
-          <figcaption>Numeracy</figcaption>
-        </figure>
+<!-- <footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            Built with the Bulma template style (inspired by Nerfies/MagicTime). Replace placeholders with your own assets.
+          </p>
+        </div>
       </div>
     </div>
   </div>
-</section>
+</footer> -->
 
-<!-- Leaderboard -->
-<section id="results" class="section">
-  <div class="wrap">
-    <h2>Leaderboard (placeholder)</h2>
-    <div class="tablewrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Method</th><th>Color</th><th>Shape</th><th>Texture</th><th>2D</th><th>3D</th><th>Non-Sp.</th><th>Num.</th><th>Complex</th><th>Mean</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>SD-Turbo</td><td>0.55</td><td>0.44</td><td>0.57</td><td>0.17</td><td>0.30</td><td>0.49</td><td>0.31</td><td>0.41</td><td>0.41</td></tr>
-          <tr><td><strong>CARINOX (Ours)</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><strong>—</strong></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- Download -->
-<section id="download" class="section alt">
-  <div class="wrap">
-    <h2>Download</h2>
-    <ul class="tight">
-      <li><a href="https://github.com/USERNAME/carinox" target="_blank" rel="noopener">Code (GitHub)</a></li>
-      <li><a href="#paper">BibTeX (below)</a></li>
-      <li>Prompts & results — coming soon.</li>
-    </ul>
-  </div>
-</section>
-
-<!-- Paper -->
-<section id="paper" class="section">
-  <div class="wrap">
-    <h2>Paper & BibTeX</h2>
-    <p><a class="btn" href="#" onclick="return false;">arXiv (coming soon)</a></p>
-    <pre class="code">@article{carinox2025,
-  title  = {CARINOX: Reward-Guided Initial Noise Exploration and Refinement for Compositional Text-to-Image},
-  author = {Your Name and Coauthors},
-  journal= {arXiv preprint arXiv:xxxx.xxxxx},
-  year   = {2025}
-}</pre>
-  </div>
-</section>
-
-<!-- Footer -->
-<footer class="footer">
-  <div class="wrap">
-    © CARINOX — training-free noise exploration + refinement for compositional T2I.
-  </div>
-</footer>
-
-<script src="site.js"></script>
 </body>
 </html>

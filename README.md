@@ -53,4 +53,6 @@ python main.py --model "pixart" --k 3 --lr 5 --save_all_images
 ```
 
 ```bash
-python main.py --model "sdxl-turbo" --disable_da --disable_imagereward --hps_weight 3.0 --vqa_weight 0.5 ```
+python main.py --model "sdxl-turbo" --disable_da --disable_imagereward --hps_weight 3.0 --vqa_weight 0.5
+```
+

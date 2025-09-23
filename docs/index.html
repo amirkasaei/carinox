@@ -64,7 +64,7 @@
 
           <div class="column has-text-centered">
             <div class="publication-links">
-              <span class="link-block"><a href="#" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="ai ai-arxiv"></i></span><span>arXiv</span></a></span>
+              <span class="link-block"><a href="https://arxiv.org/abs/2509.17458" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="ai ai-arxiv"></i></span><span>arXiv</span></a></span>
               <span class="link-block"><a href="https://github.com/amirkasaei/carinox" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fab fa-github"></i></span><span>Code</span></a></span>
             </div>
           </div>
@@ -96,7 +96,7 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Text-to-image diffusion models, such as Stable Diffusion, can produce high-quality and diverse images but often fail to achieve compositional alignment, particularly when prompts describe complex object relationships, attributes, or spatial arrangements. Recent inference-time approaches address this by optimizing or exploring the initial noise under the guidance of reward functions that score text–image alignment—without requiring model fine-tuning. While promising, each strategy has intrinsic limitations when used alone: optimization can stall due to poor initialization or unfavorable search trajectories, whereas exploration may require a prohibitively large number of samples to locate a satisfactory output. Our analysis further shows that neither single reward metrics nor ad-hoc combinations reliably capture all aspects of compositionality, leading to weak or inconsistent guidance. To overcome these challenges, we present Category-Aware Reward-based Initial Noise Optimization and EXploration (CARINOX), a unified framework that combines noise optimization and exploration with a principled reward selection procedure grounded in correlation with human judgments. Evaluations on two complementary benchmarks—covering diverse compositional challenges—show that CARINOX raises average alignment scores by +16% on T2I-CompBench++ and +11% on the HRS benchmark, consistently outperforming state-of-the-art optimization and exploration-based methods across all major categories, while preserving image quality and diversity.
+            Text-to-image diffusion models, such as Stable Diffusion, can produce high-quality and diverse images but often fail to achieve compositional alignment, particularly when prompts describe complex object relationships, attributes, or spatial arrangements. Recent inference-time approaches address this by optimizing or exploring the initial noise under the guidance of reward functions that score text–image alignment—without requiring model fine-tuning. While promising, each strategy has intrinsic limitations when used alone: optimization can stall due to poor initialization or unfavorable search trajectories, whereas exploration may require a prohibitively large number of samples to locate a satisfactory output. Our analysis further shows that neither single reward metrics nor ad-hoc combinations reliably capture all aspects of compositionality, leading to weak or inconsistent guidance. To overcome these challenges, we present <strong>C</strong>ategory-<strong>A</strong>ware <strong>R</strong>eward-based <strong>I</strong>nitial <strong>N</strong>oise <strong>O</strong>ptimization and E<strong>X</strong>ploration (CARINOX), a unified framework that combines noise optimization and exploration with a principled reward selection procedure grounded in correlation with human judgments. Evaluations on two complementary benchmarks—covering diverse compositional challenges—show that CARINOX raises average alignment scores by +16% on T2I-CompBench++ and +11% on the HRS benchmark, consistently outperforming state-of-the-art optimization and exploration-based methods across all major categories, while preserving image quality and diversity.
           </p>
         </div>
       </div>
@@ -104,18 +104,20 @@
   </div>
 </section>
 
-<!-- <section class="section" id="BibTeX">
+<section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-    <pre><code>@article{Kasaei2025CARINOX,
-  title={CARINOX: Category-Aware Reward-based Initial Noise Optimization and Exploration for Compositional Text-to-Image Generation},
-  author={Kasaei, Seyed Amir and Aghayari, Ali and Marioriyad, Arash and Sepasian, Niki and Baghayi Nejad, Shayan and Fazli, MohammadAmin and Soleymani Baghshah, Mahdieh and Rohban, Mohammad Hossein},
-  journal={Transactions on Machine Learning Research},
-  year={2025},
-  url={https://your-project-site/}
+    <pre><code>@misc{kasaei2025carinoxinferencetimescalingcategoryaware,
+      title={CARINOX: Inference-time Scaling with Category-Aware Reward-based Initial Noise Optimization and Exploration}, 
+      author={Seyed Amir Kasaei and Ali Aghayari and Arash Marioriyad and Niki Sepasian and Shayan Baghayi Nejad and MohammadAmin Fazli and Mahdieh Soleymani Baghshah and Mohammad Hossein Rohban},
+      year={2025},
+      eprint={2509.17458},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2509.17458}, 
 }</code></pre>
   </div>
-</section> -->
+</section>
 
 <!-- <footer class="footer">
   <div class="container">

@@ -68,7 +68,7 @@ Applies custom weighting: **HPS = 3.0** and **VQA = 0.5** to adjust the contribu
 python main.py --model "sdxl-turbo" --disable_da --disable_imagereward --hps_weight 3.0 --vqa_weight 0.5
 ```
 
-#### Cite
+### Cite
 ```
 @article{
 kasaei2026carinox,
@@ -81,6 +81,7 @@ url={https://openreview.net/forum?id=XB1cwXHV0c},
 note={}
 }
 ```
+
 
 
 

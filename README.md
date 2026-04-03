@@ -3,7 +3,7 @@
 
 <!-- __Authors__:  -->
 
-[![arXiv](https://img.shields.io/badge/arXiv-Paper-red.svg)](#)
+[![arXiv](https://img.shields.io/badge/arXiv-Paper-red.svg)](https://arxiv.org/abs/2509.17458)
 
 
 ### Abstract

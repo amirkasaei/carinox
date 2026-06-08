@@ -4,6 +4,8 @@
 <!-- __Authors__:  -->
 
 [![arXiv](https://img.shields.io/badge/arXiv-Paper-red.svg)](https://arxiv.org/abs/2509.17458)
+[![OpenReview](https://img.shields.io/badge/OpenReview-Paper-blue.svg)](https://openreview.net/forum?id=XB1cwXHV0c)
+
 
 
 ### Abstract
